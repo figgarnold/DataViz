@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import io
 import math
 import os
-import time
+#import time  #next iteration to include time views?
 import geocoder
 import webbrowser
 
@@ -18,7 +18,6 @@ def list_stations(url):
     if response.status_code == 200:
         data = pd.read_csv(io.StringIO(response.text))
         return data
-    
     else:
         print(f"Error: {response.status_code}")
         return None
@@ -36,25 +35,41 @@ def haversine(lat1, lon1, lat2, lon2):
 #define URL and call function
 url = "https://www2.sepa.org.uk/rainfall/api/Stations?csv=true"
 stations = list_stations(url)
+print(stations)
 
 #Tell GeoPandas which columns to use for data points
 geostations = gpd.GeoDataFrame(stations, geometry=gpd.points_from_xy(stations["station_longitude"], stations["station_latitude"]), crs="EPSG:4326")
 
+#import country geodata
+scotland_gdf = gpd.read_file(r"C:\Users\heath\Desktop\HFA_projects\Data_Viz\Rainfall\images\Scotland.gpkg")
+scotland_gdf = scotland_gdf.to_crs(epsg=4326)
+
+# Plotting part - Create a Matplotlib figure and axes object
+fig, ax = plt.subplots(figsize=(10, 10)) 
+
+# Plot the countries
+scotland_gdf.plot(ax=ax, color='white', edgecolor='black',zorder=1)
+
 # Plot the stations
-ax = geostations.plot(marker='*', color='green', markersize=10)
-plt.title("SEPA Rainfall Stations")
-plt.xlabel("Longitude")
-plt.ylabel("Latitude")
-plt.savefig("rainfall_stations.png")  # Save the plot as an image
+geostations.plot(ax=ax, marker='*', column='itemValue', legend=True, markersize=25, zorder=2)
+
+# Set plot title and labels
+ax.set_title("SEPA Rainfall Stations")
+ax.set_xlabel("Longitude")
+ax.set_ylabel("Latitude")
+
+# Save the plot as an image
+plt.savefig(os.path.join(current_directory, "rainfall_stations.png"))
 plt.show()
 
 #create file
-file = open("rainfall.txt", "w")
+file_path = os.path.join(current_directory, "rainfall.txt")
+file = open(file_path, "w")
 file.write("SEPA Rainfall Stations\n")      
 
 #update user location long/lat
 g = geocoder.ip('me')
-if g.latlng:  # Check if we got a valid location
+if g.latlng:  
     user_lat, user_lon = g.latlng
     file.write(f"\nBased on your IP, your current latitude is {user_lat}, and your current longitude {user_lon}\n")
 
@@ -69,7 +84,7 @@ if g.latlng:  # Check if we got a valid location
 
         if distance < min_distance:
             min_distance = distance
-            nearest_station = row['station_name']  # Adjust this to the correct column name for the station name
+            nearest_station = row['station_name']  
 
     file.write(f"Your nearest station is: {nearest_station} at {min_distance:.2f} km away.\n")
 else:
@@ -78,4 +93,4 @@ else:
 file.close()
 
 # Open the file in a browser
-webbrowser.open("rainfall.txt")
+webbrowser.open(f'file:///{file_path}')

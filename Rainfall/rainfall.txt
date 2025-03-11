@@ -1,0 +1,4 @@
+SEPA Rainfall Stations
+
+Based on your IP, your current latitude is 55.8733, and your current longitude -3.1051
+Your nearest station is: Harelaw at 4.94 km away.
